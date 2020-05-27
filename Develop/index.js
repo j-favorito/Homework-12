@@ -82,7 +82,7 @@ const addQuestion = async (connection,table) => {
                 choices: savedDepts
             }])
             .then(function (res) {
-                console.log(res.roleDept)
+//                console.log(res.roleDept)
                 addRole(connection,res.roleName,res.roleSalary,res.roleDept)
             })
     }
@@ -104,12 +104,11 @@ const addQuestion = async (connection,table) => {
 
 const retrieveData = async (connection) => {
     const [roleRows, roleFields] = await connection.query('SELECT * FROM role');
-    console.log(roleRows);
+//    console.log(roleRows);
     savedRoles = roleRows;
     const [deptRows, deptFields] = await connection.query('SELECT * FROM department');
-    console.log(deptRows);
+//    console.log(deptRows);
     savedDepts = deptRows;
-
 }
 
 const addEmployee = async (connection,firstName,lastName, employeeRole) => {
@@ -124,11 +123,12 @@ const addEmployee = async (connection,firstName,lastName, employeeRole) => {
     const employeeQry = 'INSERT INTO employee SET ?'
     const params = {first_name: firstName,last_name: lastName,role_id: roleID};
     const [rows, fields] = await connection.query(employeeQry, params);
-    console.log(rows);
+//    console.log(rows);
+    await contQuestion();
 }
 
 const addRole = async (connection,roleName, roleSalary, roleDept) => {
-    console.log(roleName,roleSalary,roleDept)
+//    console.log(roleName,roleSalary,roleDept)
     const deptQry= 'SELECT * FROM department'
     const [deptRows]=await connection.query(deptQry);
     let deptID;
@@ -140,24 +140,39 @@ const addRole = async (connection,roleName, roleSalary, roleDept) => {
     const roleQry = 'INSERT INTO role SET ?'
     const params = {name: roleName, salary: roleSalary, departmnet_id: deptID}
     const [rows, fields] = await connection.query(roleQry, params);
-    console.log(rows);
+//    console.log(rows);
+    await contQuestion();
 }
 
 const addDept = async (connection,deptName) => {
     const deptQry = 'INSERT INTO department SET ?'
     const params = { name: deptName };
     const [rows, fields] = await connection.query(deptQry, params);
-    console.log(rows);
+ //   console.log(rows);
+    await contQuestion();
 }
 
 const viewQuestion=async(connection,selection)=>{
     const viewQry='SELECT * FROM '+selection;
     const [viewRows]=await connection.query(viewQry);
     console.table(viewRows);
+    await contQuestion();
 }
 
-const updateQuestion=async(connection,)
-
+const contQuestion=async()=>{
+    await inq
+    .prompt({
+        type: 'confirm',
+        name: 'continue',
+        message: 'Continue? '
+    })
+    .then(function(res){
+        if(res.continue==true){
+            main();
+        }
+        else{connection.end()}
+    })
+}
 const main = async()=>{
     try{
         const connection = await mysql.createConnection({

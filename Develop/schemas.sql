@@ -4,10 +4,11 @@ CREATE database business_db;
 USE business_db;
 
 CREATE TABLE employee (
+  id INT AUTO_INCREMENT NOT NULL,
   first_name VARCHAR(30) NOT NULL,
   last_name VARCHAR(30) NOT NULL,
-  role_id INT AUTO_INCREMENT NOT NULL,
-  PRIMARY KEY (ROLE_ID)
+  role_id INT NOT NULL,
+  PRIMARY KEY (id)
 );
 
 
