@@ -2,7 +2,7 @@ const inq = require("inquirer");
 const mysql = require("mysql2/promise");
 let savedRoles = [];
 let savedDepts = [];
-
+let savedEmployees=[];
 
 const askQuestion = async (connection) => {
     await inq
@@ -38,7 +38,16 @@ const askQuestion = async (connection) => {
                     });
             }
             else if (res.option == 'Update') {
-                updateQuestion(connection);
+                inq
+                .prompt({
+                    type:'list',
+                    name:'employeeChange',
+                    message:"Which employees' role are you changing? ",
+                    choices: savedEmployees
+                })
+                .then(function(res){
+                    updateQuestion(connection,res.employeeChange);
+                })
             }
         });
     }
@@ -109,6 +118,10 @@ const retrieveData = async (connection) => {
     const [deptRows, deptFields] = await connection.query('SELECT * FROM department');
 //    console.log(deptRows);
     savedDepts = deptRows;
+    const [employeeRows] = await connection.query('SELECT * FROM employee');
+    employeeRows.forEach(row=>{
+        savedEmployees.push(row.first_name+' '+row.last_name);
+    });
 }
 
 const addEmployee = async (connection,firstName,lastName, employeeRole) => {
@@ -157,6 +170,10 @@ const viewQuestion=async(connection,selection)=>{
     const [viewRows]=await connection.query(viewQry);
     console.table(viewRows);
     await contQuestion();
+}
+
+const updateQuestion=async(connection,employee)=>{
+    
 }
 
 const contQuestion=async()=>{
