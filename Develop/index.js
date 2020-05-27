@@ -1,9 +1,11 @@
 const inq = require("inquirer");
 const mysql = require("mysql2/promise");
+//global arrays to hold table data
 let savedRoles = [];
 let savedDepts = [];
 let savedEmployees = [];
 
+//inital questions
 const askQuestion = async (connection) => {
     await inq
         .prompt({
@@ -42,7 +44,7 @@ const askQuestion = async (connection) => {
                     .prompt([{
                         type: 'list',
                         name: 'employeeChange',
-                        message: "Which employees' role are you changing? ",
+                        message: "Last name of employee to change? ",
                         choices: savedEmployees
                     },{
                         type: 'list',
@@ -57,7 +59,9 @@ const askQuestion = async (connection) => {
         });
 }
 
+//function called if chosing to add
 const addQuestion = async (connection, table) => {
+    //employee addition questions
     if (table == 'Employee') {
         await inq
             .prompt([{
@@ -78,6 +82,7 @@ const addQuestion = async (connection, table) => {
                 addEmployee(connection, res.employeeFirst, res.employeeLast, res.employeeRole)
             })
     }
+    //role addition questions
     else if (table == 'Role') {
         await inq
             .prompt([{
@@ -100,6 +105,7 @@ const addQuestion = async (connection, table) => {
                 addRole(connection, res.roleName, res.roleSalary, res.roleDept)
             })
     }
+    //table addition questions
     else if (table == 'Department') {
         await inq
             .prompt({
@@ -113,19 +119,24 @@ const addQuestion = async (connection, table) => {
     }
 }
 
+//retrieves table data
 const retrieveData = async (connection) => {
+    savedRoles=[];
     const [roleRows, roleFields] = await connection.query('SELECT * FROM role');
     //    console.log(roleRows);
     savedRoles = roleRows;
+    savedDepts = [];
     const [deptRows, deptFields] = await connection.query('SELECT * FROM department');
     //    console.log(deptRows);
     savedDepts = deptRows;
+    savedEmployees=[];
     const [employeeRows] = await connection.query('SELECT * FROM employee');
     employeeRows.forEach(row => {
-        savedEmployees.push(row.first_name + ' ' + row.last_name);
+        savedEmployees.push(row.last_name);
     });
 }
 
+//adds new employee to table
 const addEmployee = async (connection, firstName, lastName, employeeRole) => {
     const roleQry = 'SELECT * FROM role'
     const [roleRows] = await connection.query(roleQry);
@@ -139,9 +150,10 @@ const addEmployee = async (connection, firstName, lastName, employeeRole) => {
     const params = { first_name: firstName, last_name: lastName, role_id: roleID };
     const [rows, fields] = await connection.query(employeeQry, params);
     //    console.log(rows);
-    await contQuestion();
+    await contQuestion(connection);
 }
 
+//adds new role to table
 const addRole = async (connection, roleName, roleSalary, roleDept) => {
     //    console.log(roleName,roleSalary,roleDept)
     const deptQry = 'SELECT * FROM department'
@@ -156,29 +168,48 @@ const addRole = async (connection, roleName, roleSalary, roleDept) => {
     const params = { name: roleName, salary: roleSalary, departmnet_id: deptID }
     const [rows, fields] = await connection.query(roleQry, params);
     //    console.log(rows);
-    await contQuestion();
+    await contQuestion(connection);
 }
-
+//adds new department to table
 const addDept = async (connection, deptName) => {
     const deptQry = 'INSERT INTO department SET ?'
     const params = { name: deptName };
     const [rows, fields] = await connection.query(deptQry, params);
     //   console.log(rows);
-    await contQuestion();
+    await contQuestion(connection);
 }
-
+//displays table in terminal
 const viewQuestion = async (connection, selection) => {
     const viewQry = 'SELECT * FROM ' + selection;
     const [viewRows] = await connection.query(viewQry);
     console.table(viewRows);
-    await contQuestion();
+    await contQuestion(connection);
 }
-
-const updateQuestion = async (connection, employee) => {
-
+//updates an employee
+const updateQuestion = async (connection, employee,role) => {
+    const roleQry = 'SELECT * FROM role'
+    const [roleRows] = await connection.query(roleQry);
+    let roleID;
+    roleRows.forEach(row => {
+        if (row.name == role) {
+            roleID = row.id
+        }
+    });
+    const employeeQry = 'SELECT * FROM employee'
+    const [employeeRows] = await connection.query(employeeQry);
+    let employeeID;
+    employeeRows.forEach(row => {
+        if (row.last_name == employee) {
+            employeeID = row.id;
+        }
+    });
+    const updateQry='UPDATE employee SET ? WHERE ?'
+    const updateParams=[{role_id:roleID},{id:employeeID}]
+    const [updateRows]=await connection.query(updateQry,updateParams);
+    contQuestion(connection);
 }
-
-const contQuestion = async () => {
+//question to loop code
+const contQuestion = async (connection) => {
     await inq
         .prompt({
             type: 'confirm',
@@ -192,6 +223,7 @@ const contQuestion = async () => {
             else { connection.end() }
         })
 }
+//main async function
 const main = async () => {
     try {
         const connection = await mysql.createConnection({
